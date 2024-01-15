@@ -1,0 +1,14 @@
+## Ignore all
+*
+
+## Except
+# files
+!.code-workspace
+!.gitignore
+!platformio.ini
+
+# folders
+!src
+!src/**
+!include
+!include/**
