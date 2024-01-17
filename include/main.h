@@ -1,3 +1,9 @@
+/*
+ * Arduino Nano SPI LED
+ * Infrared receiver
+ * 2024 LouD
+ */
+
 #ifndef NanoLed_h
 #define NanoLed_h
 

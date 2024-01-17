@@ -1,7 +1,7 @@
 /*
- * Blink
- * Turns on an LED on for one second,
- * then off for one second, repeatedly.
+ * Arduino Nano SPI LED
+ * Infrared receiver
+ * 2024 LouD
  */
 
 #include <Arduino.h>
