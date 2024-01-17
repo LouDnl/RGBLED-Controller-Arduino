@@ -216,6 +216,29 @@ void setcolor(long command) {
     printColorBrightness();
 }
 
+void setbrightness(long direction) {
+  switch (direction) {
+    case brightness_up:
+      if (brightness < BRIGHTNESS_MAX && brightness != BRIGHTNESS_MAX) {
+        brightness += step;
+        brightness = (brightness >= BRIGHTNESS_MAX) ? BRIGHTNESS_MAX : brightness;
+        FastLED.setBrightness(brightness);
+        FastLED.show();
+        printColorBrightness();
+      }
+      break;
+    case brightness_down:
+      if (brightness > BRIGHTNESS_MIN && brightness != BRIGHTNESS_MIN) {
+        brightness -= step;
+        brightness = (brightness <= BRIGHTNESS_MIN) ? BRIGHTNESS_MIN : brightness;
+        FastLED.setBrightness(brightness);
+        FastLED.show();
+        printColorBrightness();
+      }
+      break;
+  }
+}
+
 
 /* LED Loop functions */
 
@@ -271,25 +294,21 @@ void juggle() {
 
 void fadeColor() {
   // switch fade up to down and vice versa
-  if (brightness >= BRIGHTNESS_MAX - 5) {
+  if (brightness >= BRIGHTNESS_MAX - step) {
     fade_up_fade_down = false;
-  } else if (brightness <= BRIGHTNESS_MIN + 5) {
+  } else if (brightness <= BRIGHTNESS_MIN + step) {
     fade_up_fade_down = true;
   }
   // fade up and fade down
-  if (fade_up_fade_down && brightness < BRIGHTNESS_MAX - 5) {  // dont fade to 255 completely
+  if (fade_up_fade_down && brightness < BRIGHTNESS_MAX - step) {  // dont fade to 255 completely
         brightness += fade_step;
-        brightness = (brightness > BRIGHTNESS_MAX) ? BRIGHTNESS_MAX : brightness;
-        FastLED.setBrightness(brightness);
-        FastLED.show();
-        // printColorBrightness();  // Serial carnage
-  } else if (!fade_up_fade_down && brightness > BRIGHTNESS_MIN + 5) {  // dont fade to 0 completely
+        brightness = (brightness > BRIGHTNESS_MAX - step) ? BRIGHTNESS_MAX - step : brightness;
+  } else if (!fade_up_fade_down && brightness > BRIGHTNESS_MIN + step) {  // dont fade to 0 completely
         brightness -= fade_step;
-        brightness = (brightness < BRIGHTNESS_MIN) ? BRIGHTNESS_MIN : brightness;
-        FastLED.setBrightness(brightness);
-        FastLED.show();
-        // printColorBrightness();  // Serial carnage
+        brightness = (brightness < BRIGHTNESS_MIN + step) ? BRIGHTNESS_MIN + step : brightness;
   }
+  FastLED.setBrightness(brightness);
+  FastLED.show();
   delay(fade_delay);
 }
 
@@ -448,20 +467,10 @@ void ircallback() {
       setcolor(command);
       break;
     case brightness_up:
-      if (brightness < 255) {
-        brightness += step;
-        FastLED.setBrightness(brightness);
-        FastLED.show();
-        printColorBrightness();
-      }
+      setbrightness(brightness_up);
       break;
     case brightness_down:
-      if (brightness > 0) {
-        brightness -= step;
-        FastLED.setBrightness(brightness);
-        FastLED.show();
-        printColorBrightness();
-      }
+      setbrightness(brightness_down);
       break;
     case red_up:
       current_color = leds[ 1 ];

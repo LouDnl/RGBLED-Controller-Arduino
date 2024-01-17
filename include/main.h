@@ -59,11 +59,12 @@ void juggle();
 void bpm();
 void fadeColor();
 void flashColor();
-void setcolor(long command);
+void ledloop();
 
 void ledson();
 void ledsoff();
-void ledloop();
+void setcolor(long command);
+void setbrightness(long direction);
 
 void printColorBrightness();
 void printLoopType(long looptype);
