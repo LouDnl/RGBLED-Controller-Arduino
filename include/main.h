@@ -23,7 +23,7 @@
 #define CLOCK_PIN 9
 #define LED_TYPE WS2801
 #define COLOR_ORDER BGR
-#define NUM_LEDS 128
+#define NUM_LEDS 96  // 128
 #define UPDATES_PER_SECOND 100
 #define BRIGHTNESS          95
 #define FRAMES_PER_SECOND  120
