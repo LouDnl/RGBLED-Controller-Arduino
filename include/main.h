@@ -49,6 +49,7 @@ void confetti();
 void sinelon();
 void juggle();
 void bpm();
+void fadeColor();
 void setcolor(long command);
 
 void ledson();
@@ -117,23 +118,26 @@ const ColorTemperature temperatures[20] =
 #define RAMSIZE 0xFFFF // Dummy value for platforms where RAMSIZE is not defined
 
 volatile bool sIRDataJustReceived = false;
-volatile bool power = false;
-volatile bool play_loop = false;
-volatile bool loop_running = false;
-volatile int brightness = BRIGHTNESS;
-CHSV color;
-CRGB current_color;
-const int step = 5;
-
-
+volatile bool power                     = false;
+volatile bool play_loop                 = false;
 volatile bool play_loop_rainbow         = false;
 volatile bool play_loop_rainbowglitter  = false;
 volatile bool play_loop_confetti        = false;
 volatile bool play_loop_sinelon         = false;
 volatile bool play_loop_juggle          = false;
 volatile bool play_loop_bpm             = false;
+volatile bool loop_running              = false;
 volatile bool add_glitter               = false;
+volatile bool fade_color                = false;
+volatile bool fade_up_fade_down         = false;  // true is up, false is down
+volatile int brightness                 = BRIGHTNESS;
+CHSV color;
+CRGB current_color;
+const int step = 5;
+const int fade_step = 1;
+const int fade_delay = 3;
 
+// ir remote button command values
 const long on_off          = 0x40;
 const long play_pause      = 0x41;
 
@@ -184,19 +188,14 @@ const long jump7           = 0x5;
 const long fade3           = 0x6;
 const long fade7           = 0x7;
 
+// global vars
 const long loop_rainbow         = diy1;
 const long loop_rainbowglitter  = diy2;
 const long loop_confetti        = diy3;
 const long loop_sinelon         = diy4;
 const long loop_juggle          = diy5;
 const long loop_bpm             = diy6;
-
-// /*
-//  * Helper macro for getting a macro definition as string
-//  */
-// #if !defined(STR_HELPER)
-// #define STR_HELPER(x) #x
-// #define STR(x) STR_HELPER(x)
-// #endif
+const long loop_fade            = slow;
+const long glitter              = quick;
 
 #endif

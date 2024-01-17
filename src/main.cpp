@@ -99,6 +99,12 @@ void loop()
       bpm();
       FastLED.show();
     }
+  } else if (fade_color && !loop_running) {
+    while (fade_color) {
+      loop_running = true;
+      fadeColor();
+      FastLED.show();
+    }
   }
 }
 
@@ -208,7 +214,7 @@ void setcolor(long command) {
 void rainbow()
 {
   // FastLED's built-in rainbow generator
-  fill_rainbow( leds, NUM_LEDS, gHue, 7);
+  fill_rainbow(leds, NUM_LEDS, gHue, 7);
 }
 
 void rainbowWithGlitter()
@@ -240,19 +246,41 @@ void bpm()
   uint8_t BeatsPerMinute = 62;
   CRGBPalette16 palette = PartyColors_p;
   uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
-  for( int i = 0; i < NUM_LEDS; i++) { //9948
+  for(int i = 0; i < NUM_LEDS; i++) { //9948
     leds[i] = ColorFromPalette(palette, gHue+(i*2), beat-gHue+(i*10));
   }
 }
 
 void juggle() {
   // eight colored dots, weaving in and out of sync with each other
-  fadeToBlackBy( leds, NUM_LEDS, 20);
+  fadeToBlackBy(leds, NUM_LEDS, 20);
   uint8_t dothue = 0;
   for( int i = 0; i < 8; i++) {
     leds[beatsin16( i+7, 0, NUM_LEDS-1 )] |= CHSV(dothue, 200, 255);
     dothue += 32;
   }
+}
+
+void fadeColor() {
+  // switch fade up to down and vice versa
+  if (brightness >= 250) {
+    fade_up_fade_down = false;
+  } else if (brightness <= 5) {
+    fade_up_fade_down = true;
+  }
+  // fade up and fade down
+  if (fade_up_fade_down && brightness < 250) {
+        brightness += fade_step;
+        FastLED.setBrightness(brightness);
+        FastLED.show();
+        // printColorBrightness();  // Serial carnage
+  } else if (!fade_up_fade_down && brightness > 5) {
+        brightness -= fade_step;
+        FastLED.setBrightness(brightness);
+        FastLED.show();
+        // printColorBrightness();  // Serial carnage
+  }
+  delay(fade_delay);
 }
 
 void ledloop() {
@@ -289,6 +317,7 @@ void ircallback() {
       play_loop_sinelon = false;
       play_loop_juggle = false;
       play_loop_bpm = false;
+      fade_color = false;
       if ( power ) {
         ledson();
       } else {
@@ -306,6 +335,7 @@ void ircallback() {
       play_loop_sinelon = false;
       play_loop_juggle = false;
       play_loop_bpm = false;
+      fade_color = false;
       break;
     case loop_rainbow:
       power = true;
@@ -318,6 +348,7 @@ void ircallback() {
       play_loop_sinelon = false;
       play_loop_juggle = false;
       play_loop_bpm = false;
+      fade_color = false;
       printLoopType(loop_rainbow);
       break;
     case loop_rainbowglitter:
@@ -331,6 +362,7 @@ void ircallback() {
       play_loop_sinelon = false;
       play_loop_juggle = false;
       play_loop_bpm = false;
+      fade_color = false;
       printLoopType(loop_rainbowglitter);
       break;
     case loop_confetti:
@@ -344,6 +376,7 @@ void ircallback() {
       play_loop_sinelon = false;
       play_loop_juggle = false;
       play_loop_bpm = false;
+      fade_color = false;
       printLoopType(loop_confetti);
       break;
     case loop_sinelon:
@@ -357,6 +390,7 @@ void ircallback() {
       play_loop_sinelon = true;
       play_loop_juggle = false;
       play_loop_bpm = false;
+      fade_color = false;
       printLoopType(loop_sinelon);
       break;
     case loop_juggle:
@@ -370,6 +404,7 @@ void ircallback() {
       play_loop_sinelon = false;
       play_loop_juggle = true;
       play_loop_bpm = false;
+      fade_color = false;
       printLoopType(loop_juggle);
       break;
     case loop_bpm:
@@ -383,6 +418,7 @@ void ircallback() {
       play_loop_sinelon = false;
       play_loop_juggle = false;
       play_loop_bpm = true;
+      fade_color = false;
       printLoopType(play_loop_bpm);
       break;
     case red_full:
@@ -478,9 +514,31 @@ void ircallback() {
       }
       break;
     case quick:
+      power = true;
       add_glitter = true;
+      loop_running = false;
+      play_loop = false;
+      play_loop_rainbow = false;
+      play_loop_rainbowglitter = false;
+      play_loop_confetti = false;
+      play_loop_sinelon = false;
+      play_loop_juggle = false;
+      play_loop_bpm = false;
+      fade_color = false;
       break;
-    case slow:  // TODO: Finish
+    case slow:
+      power = true;
+      add_glitter = false;
+      loop_running = false;
+      play_loop = false;
+      play_loop_rainbow = false;
+      play_loop_rainbowglitter = false;
+      play_loop_confetti = false;
+      play_loop_sinelon = false;
+      play_loop_juggle = false;
+      play_loop_bpm = false;
+      fade_color = true;
+      printLoopType(loop_fade);
       break;
     case autob:
       power = true;
@@ -492,19 +550,25 @@ void ircallback() {
       play_loop_sinelon = false;
       play_loop_juggle = false;
       play_loop_bpm = false;
+      fade_color = false;
       printLoopType(play_pause);
     case flash:  // TODO: Finish
+      power = true;
       break;
     case jump3:  // TODO: Finish
+      power = true;
       break;
     case jump7:  // TODO: Finish
+      power = true;
       break;
     case fade3:  // TODO: Finish
+      power = true;
       break;
     case fade7:  // TODO: Finish
+      power = true;
       break;
     default:
-      printCommand();
+      printCommand();  // prints received command to Serial
       break;
   };
   IrReceiver.resume();  // resume receiving for callback
