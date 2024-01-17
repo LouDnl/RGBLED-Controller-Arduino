@@ -4,7 +4,7 @@
 #include "pixeltypes.h"
 
 /* Debugging */
-#define DEBUG            1    // SET TO 0 OUT TO REMOVE TRACES
+#define DEBUG            0    // SET TO 0 OUT TO REMOVE TRACES
 #define SERIAL_BAUD 115200
 
 #if DEBUG
