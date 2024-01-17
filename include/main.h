@@ -60,11 +60,7 @@ void printLoopType(long looptype);
 void printCommand();
 
 // ir remote
-// void irremote();
 void ircallback();
-// void irstoploop();
-// void irloop();
-// bool detectLongPress(uint16_t aLongPressDurationMillis);
 
 
 /* Pre declare vars */
