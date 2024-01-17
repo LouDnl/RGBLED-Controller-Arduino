@@ -4,7 +4,8 @@
 #include "pixeltypes.h"
 
 /* Debugging */
-#define DEBUG 1    // SET TO 0 OUT TO REMOVE TRACES
+#define DEBUG            1    // SET TO 0 OUT TO REMOVE TRACES
+#define SERIAL_BAUD 115200
 
 #if DEBUG
 #define D_SerialBegin(...) Serial.begin(__VA_ARGS__);
@@ -19,13 +20,20 @@
 #endif
 
 /* LEDS */
-#define DATA_PIN 8
-#define CLOCK_PIN 9
-#define LED_TYPE WS2801
-#define COLOR_ORDER BGR
-#define NUM_LEDS 96  // 128
+#define LED_TYPE        WS2801
+#define DATA_PIN             8
+#define CLOCK_PIN            9
+#define COLOR_ORDER        BGR
+#define DATA_RATE       250000
+#define NUM_LEDS            96  // 128
+
 #define UPDATES_PER_SECOND 100
 #define BRIGHTNESS          95
+#define BRIGHTNESS_MAX     255
+#define BRIGHTNESS_MIN       0
+#define GLITTER_PERCENTAGE  80
+#define N_SECONDS           10
+#define N_MILLIS            20
 #define FRAMES_PER_SECOND  120
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 CRGB leds[NUM_LEDS];
@@ -50,6 +58,7 @@ void sinelon();
 void juggle();
 void bpm();
 void fadeColor();
+void flashColor();
 void setcolor(long command);
 
 void ledson();
@@ -127,15 +136,18 @@ volatile bool play_loop_sinelon         = false;
 volatile bool play_loop_juggle          = false;
 volatile bool play_loop_bpm             = false;
 volatile bool loop_running              = false;
-volatile bool add_glitter               = false;
-volatile bool fade_color                = false;
+volatile bool add_glitter               = false;  // glitter loop
+volatile bool fade_color                = false;  // fade loop
 volatile bool fade_up_fade_down         = false;  // true is up, false is down
+volatile bool flash_color               = false;  // flash loop
+volatile bool flashing                  = false;  // true is on, false is off
 volatile int brightness                 = BRIGHTNESS;
 CHSV color;
 CRGB current_color;
 const int step = 5;
 const int fade_step = 1;
 const int fade_delay = 3;
+const int flash_delay = 100;
 
 // ir remote button command values
 const long on_off          = 0x40;
@@ -189,6 +201,7 @@ const long fade3           = 0x6;
 const long fade7           = 0x7;
 
 // global vars
+const long loop_all             = autob;
 const long loop_rainbow         = diy1;
 const long loop_rainbowglitter  = diy2;
 const long loop_confetti        = diy3;
@@ -196,6 +209,7 @@ const long loop_sinelon         = diy4;
 const long loop_juggle          = diy5;
 const long loop_bpm             = diy6;
 const long loop_fade            = slow;
-const long glitter              = quick;
+const long loop_flash           = flash;
+const long loop_glitter         = quick;
 
 #endif

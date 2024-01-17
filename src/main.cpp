@@ -23,7 +23,7 @@ void setup()
 #if FLASHEND >= 0x3FFF  // For 16k flash or more, like ATtiny1604. Code does not fit in program memory of ATtiny85 etc.
   pinMode(DEBUG_BUTTON_PIN, INPUT_PULLUP);
 #endif
-  D_SerialBegin(115200);
+  D_SerialBegin(SERIAL_BAUD);
   D_println(F("Enabling IRRemote receive"));
 
   // Start the receiver and if not 3. parameter specified, take LED_BUILTIN pin from the internal boards definition as default feedback LED
@@ -34,7 +34,7 @@ void setup()
   // printActiveIRProtocols(&Serial);
   // D_println(F("at pin " STR(IR_RECEIVE_PIN)));
 
-  FastLED.addLeds<LED_TYPE, DATA_PIN, CLOCK_PIN, COLOR_ORDER, DATA_RATE_KHZ(250000)>(leds, NUM_LEDS);
+  FastLED.addLeds<LED_TYPE, DATA_PIN, CLOCK_PIN, COLOR_ORDER, DATA_RATE_KHZ(DATA_RATE)>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
   // our default color correction and temperature
   FastLED.setCorrection(TypicalPixelString);
@@ -49,23 +49,26 @@ void loop()
 {
   if (add_glitter && !loop_running) {
     fill_solid(leds, NUM_LEDS, current_color);
-    addGlitter(80);
+    addGlitter(GLITTER_PERCENTAGE);
     FastLED.show();
   } else if (play_loop && !loop_running) {
-    ledloop();
+    while (play_loop) {
+      loop_running = true;
+      ledloop();
+    }
   } else if (play_loop_rainbow && !loop_running) {
     while (play_loop_rainbow) {
       loop_running = true;
       rainbow();
       FastLED.show();
-      EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow/
+      EVERY_N_MILLISECONDS( N_MILLIS ) { gHue++; } // slowly cycle the "base color" through the rainbow/
     }
   } else if (play_loop_rainbowglitter && !loop_running) {
     while (play_loop_rainbowglitter) {
       loop_running = true;
       rainbowWithGlitter();
       FastLED.show();
-      EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow/
+      EVERY_N_MILLISECONDS( N_MILLIS ) { gHue++; } // slowly cycle the "base color" through the rainbow/
     }
   } else if (play_loop_confetti && !loop_running) {
     while (play_loop_confetti) {
@@ -105,6 +108,12 @@ void loop()
       fadeColor();
       FastLED.show();
     }
+  } else if (flash_color && !loop_running) {
+    while (flash_color) {
+      loop_running = true;
+      flashColor();
+      FastLED.show();
+    }
   }
 }
 
@@ -128,19 +137,18 @@ void addGlitter(fract8 chanceOfGlitter)
 
 void ledson() {
   fill_solid(leds, NUM_LEDS, CRGB::White);
-  FastLED.setBrightness(255);
+  FastLED.setBrightness(BRIGHTNESS_MAX);
   FastLED.show();
 }
 
 void ledsoff() {
   fadeUsingColor(leds, NUM_LEDS, CRGB::Black);
   fadeToBlackBy(leds, NUM_LEDS, 100);
-  FastLED.setBrightness(0);
+  FastLED.setBrightness(BRIGHTNESS_MIN);
   FastLED.show();
 }
 
 void setcolor(long command) {
-    power = true;
     switch (command) {
       case red_full:
         current_color = CRGB::Red;
@@ -221,7 +229,7 @@ void rainbowWithGlitter()
 {
   // built-in FastLED rainbow, plus some random sparkly glitter
   rainbow();
-  addGlitter(80);
+  addGlitter(GLITTER_PERCENTAGE);
 }
 
 void confetti()
@@ -263,19 +271,21 @@ void juggle() {
 
 void fadeColor() {
   // switch fade up to down and vice versa
-  if (brightness >= 250) {
+  if (brightness >= BRIGHTNESS_MAX - 5) {
     fade_up_fade_down = false;
-  } else if (brightness <= 5) {
+  } else if (brightness <= BRIGHTNESS_MIN + 5) {
     fade_up_fade_down = true;
   }
   // fade up and fade down
-  if (fade_up_fade_down && brightness < 250) {
+  if (fade_up_fade_down && brightness < BRIGHTNESS_MAX - 5) {  // dont fade to 255 completely
         brightness += fade_step;
+        brightness = (brightness > BRIGHTNESS_MAX) ? BRIGHTNESS_MAX : brightness;
         FastLED.setBrightness(brightness);
         FastLED.show();
         // printColorBrightness();  // Serial carnage
-  } else if (!fade_up_fade_down && brightness > 5) {
+  } else if (!fade_up_fade_down && brightness > BRIGHTNESS_MIN + 5) {  // dont fade to 0 completely
         brightness -= fade_step;
+        brightness = (brightness < BRIGHTNESS_MIN) ? BRIGHTNESS_MIN : brightness;
         FastLED.setBrightness(brightness);
         FastLED.show();
         // printColorBrightness();  // Serial carnage
@@ -283,21 +293,36 @@ void fadeColor() {
   delay(fade_delay);
 }
 
-void ledloop() {
-  while (play_loop) {
-    loop_running = true;
-    // Call the current pattern function once, updating the 'leds' array
-    gPatterns[gCurrentPatternNumber]();
+void flashColor() {
+  // flash on and flash off
+  flashing = !flashing;
 
-    // send the 'leds' array out to the actual LED strip
-    FastLED.show();
-    // insert a delay to keep the framerate modest
-    FastLED.delay(1000/FRAMES_PER_SECOND);
-
-    // do some periodic updates
-    EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow/
-    EVERY_N_SECONDS( 10 ) { nextPattern(); } // change patterns periodically
+  if (flashing) {
+        brightness = BRIGHTNESS_MAX;
+        FastLED.setBrightness(brightness);
+        FastLED.show();
+        // flashing();  // Serial carnage
+  } else if (!flashing) {
+        brightness = BRIGHTNESS_MIN + 1;
+        FastLED.setBrightness(brightness);
+        FastLED.show();
+        // printColorBrightness();  // Serial carnage
   }
+  delay(flash_delay);
+}
+
+void ledloop() {
+  // Call the current pattern function once, updating the 'leds' array
+  gPatterns[gCurrentPatternNumber]();
+
+  // send the 'leds' array out to the actual LED strip
+  FastLED.show();
+  // insert a delay to keep the framerate modest
+  FastLED.delay(1000/FRAMES_PER_SECOND);
+
+  // do some periodic updates
+  EVERY_N_MILLISECONDS( N_MILLIS ) { gHue++; } // slowly cycle the "base color" through the rainbow/
+  EVERY_N_SECONDS( N_SECONDS ) { nextPattern(); } // change patterns periodically
 }
 
 
@@ -305,9 +330,21 @@ void ledloop() {
 void ircallback() {
   IrReceiver.decode();  // decode command on isr callback
   long command = IrReceiver.decodedIRData.command;
-  switch (command) {
+
+  switch (command) {  // additional switch statement for turning all booleans off on certain buttons
     case on_off:
-      power = !power;
+    case play_pause:
+    case loop_rainbow:
+    case loop_rainbowglitter:
+    case loop_confetti:
+    case loop_sinelon:
+    case loop_juggle:
+    case loop_bpm:
+    case loop_glitter:
+    case loop_fade:
+    case loop_flash:
+    case loop_all:
+      power = true;
       add_glitter = false;
       play_loop = false;
       loop_running = false;
@@ -318,6 +355,13 @@ void ircallback() {
       play_loop_juggle = false;
       play_loop_bpm = false;
       fade_color = false;
+      flash_color = false;
+      break;
+  }
+
+  switch (command) {
+    case on_off:
+      power = !power;
       if ( power ) {
         ledson();
       } else {
@@ -325,101 +369,60 @@ void ircallback() {
       };
       break;
     case play_pause:
-      power = true;
-      add_glitter = false;
-      loop_running = false;
-      play_loop = false;
-      play_loop_rainbow = false;
-      play_loop_rainbowglitter = false;
-      play_loop_confetti = false;
-      play_loop_sinelon = false;
-      play_loop_juggle = false;
-      play_loop_bpm = false;
-      fade_color = false;
+      brightness = BRIGHTNESS_MAX;
+      FastLED.setBrightness(brightness);
+      FastLED.show();
       break;
     case loop_rainbow:
-      power = true;
-      add_glitter = false;
-      loop_running = false;
-      play_loop = false;
       play_loop_rainbow = true;
-      play_loop_rainbowglitter = false;
-      play_loop_confetti = false;
-      play_loop_sinelon = false;
-      play_loop_juggle = false;
-      play_loop_bpm = false;
-      fade_color = false;
       printLoopType(loop_rainbow);
       break;
     case loop_rainbowglitter:
-      power = true;
-      add_glitter = false;
-      loop_running = false;
-      play_loop = false;
-      play_loop_rainbow = false;
       play_loop_rainbowglitter = true;
-      play_loop_confetti = false;
-      play_loop_sinelon = false;
-      play_loop_juggle = false;
-      play_loop_bpm = false;
-      fade_color = false;
       printLoopType(loop_rainbowglitter);
       break;
     case loop_confetti:
-      power = true;
-      add_glitter = false;
-      loop_running = false;
-      play_loop = false;
-      play_loop_rainbow = false;
-      play_loop_rainbowglitter = false;
       play_loop_confetti = true;
-      play_loop_sinelon = false;
-      play_loop_juggle = false;
-      play_loop_bpm = false;
-      fade_color = false;
       printLoopType(loop_confetti);
       break;
     case loop_sinelon:
-      power = true;
-      add_glitter = false;
-      loop_running = false;
-      play_loop = false;
-      play_loop_rainbow = false;
-      play_loop_rainbowglitter = false;
-      play_loop_confetti = false;
       play_loop_sinelon = true;
-      play_loop_juggle = false;
-      play_loop_bpm = false;
-      fade_color = false;
       printLoopType(loop_sinelon);
       break;
     case loop_juggle:
-      power = true;
-      add_glitter = false;
-      loop_running = false;
-      play_loop = false;
-      play_loop_rainbow = false;
-      play_loop_rainbowglitter = false;
-      play_loop_confetti = false;
-      play_loop_sinelon = false;
       play_loop_juggle = true;
-      play_loop_bpm = false;
-      fade_color = false;
       printLoopType(loop_juggle);
       break;
     case loop_bpm:
-      power = true;
-      add_glitter = false;
-      loop_running = false;
-      play_loop = false;
-      play_loop_rainbow = false;
-      play_loop_rainbowglitter = false;
-      play_loop_confetti = false;
-      play_loop_sinelon = false;
-      play_loop_juggle = false;
       play_loop_bpm = true;
-      fade_color = false;
       printLoopType(play_loop_bpm);
+      break;
+    case loop_glitter:
+      add_glitter = true;
+      printLoopType(loop_glitter);
+      break;
+    case loop_fade:
+      fade_color = true;
+      printLoopType(loop_fade);
+      break;
+    case loop_flash:
+      flash_color = true;
+      printLoopType(loop_flash);
+      break;
+    case loop_all:
+      play_loop = true;
+      printLoopType(loop_all);
+    case jump3:  // TODO: Finish
+      power = true;
+      break;
+    case jump7:  // TODO: Finish
+      power = true;
+      break;
+    case fade3:  // TODO: Finish
+      power = true;
+      break;
+    case fade7:  // TODO: Finish
+      power = true;
       break;
     case red_full:
     case green_full:
@@ -441,6 +444,7 @@ void ircallback() {
     case dark_blue:
     case ruby_red:
     case baby_blue_two:
+      power = true;
       setcolor(command);
       break;
     case brightness_up:
@@ -513,60 +517,6 @@ void ircallback() {
         printColorBrightness();
       }
       break;
-    case quick:
-      power = true;
-      add_glitter = true;
-      loop_running = false;
-      play_loop = false;
-      play_loop_rainbow = false;
-      play_loop_rainbowglitter = false;
-      play_loop_confetti = false;
-      play_loop_sinelon = false;
-      play_loop_juggle = false;
-      play_loop_bpm = false;
-      fade_color = false;
-      break;
-    case slow:
-      power = true;
-      add_glitter = false;
-      loop_running = false;
-      play_loop = false;
-      play_loop_rainbow = false;
-      play_loop_rainbowglitter = false;
-      play_loop_confetti = false;
-      play_loop_sinelon = false;
-      play_loop_juggle = false;
-      play_loop_bpm = false;
-      fade_color = true;
-      printLoopType(loop_fade);
-      break;
-    case autob:
-      power = true;
-      loop_running = false;
-      play_loop = true;
-      play_loop_rainbow = false;
-      play_loop_rainbowglitter = false;
-      play_loop_confetti = false;
-      play_loop_sinelon = false;
-      play_loop_juggle = false;
-      play_loop_bpm = false;
-      fade_color = false;
-      printLoopType(play_pause);
-    case flash:  // TODO: Finish
-      power = true;
-      break;
-    case jump3:  // TODO: Finish
-      power = true;
-      break;
-    case jump7:  // TODO: Finish
-      power = true;
-      break;
-    case fade3:  // TODO: Finish
-      power = true;
-      break;
-    case fade7:  // TODO: Finish
-      power = true;
-      break;
     default:
       printCommand();  // prints received command to Serial
       break;
@@ -590,7 +540,7 @@ void printColorBrightness() {
 
 void printLoopType(long looptype) {
   switch (looptype) {
-    case play_pause:
+    case loop_all:
       D_println("LOOP ALL");
       break;
     case loop_rainbow:
@@ -613,6 +563,12 @@ void printLoopType(long looptype) {
       break;
     case loop_fade:
       D_println("LOOP FADE");
+      break;
+    case loop_flash:
+      D_println("LOOP FLASH");
+      break;
+    case loop_glitter:
+      D_println("LOOP GLITTER");
       break;
   }
 }
