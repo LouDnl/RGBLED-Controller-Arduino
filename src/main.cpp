@@ -142,8 +142,7 @@ void ledson() {
 }
 
 void ledsoff() {
-  fadeUsingColor(leds, NUM_LEDS, CRGB::Black);
-  fadeToBlackBy(leds, NUM_LEDS, 100);
+  fill_solid(leds, NUM_LEDS, CRGB::Black);
   FastLED.setBrightness(BRIGHTNESS_MIN);
   FastLED.show();
 }
@@ -383,7 +382,7 @@ void ircallback() {
       power = !power;
       if ( power ) {
         ledson();
-      } else {
+      } else if (!power) {
         ledsoff();
       };
       break;
