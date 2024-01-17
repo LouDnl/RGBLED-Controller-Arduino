@@ -23,15 +23,16 @@ void setup()
 #if FLASHEND >= 0x3FFF  // For 16k flash or more, like ATtiny1604. Code does not fit in program memory of ATtiny85 etc.
   pinMode(DEBUG_BUTTON_PIN, INPUT_PULLUP);
 #endif
-  Serial.begin(115200);
-  Serial.println(F("Enabling IRRemote receive"));
+  D_SerialBegin(115200);
+  D_println(F("Enabling IRRemote receive"));
+
   // Start the receiver and if not 3. parameter specified, take LED_BUILTIN pin from the internal boards definition as default feedback LED
   IrReceiver.begin(IR_RECEIVE_PIN, ENABLE_LED_FEEDBACK);
   IrReceiver.registerReceiveCompleteCallback(ircallback);
 
-  // Serial.print(F("Ready to receive IR signals of protocols: "));
+  // D_print(F("Ready to receive IR signals of protocols: "));
   // printActiveIRProtocols(&Serial);
-  // Serial.println(F("at pin " STR(IR_RECEIVE_PIN)));
+  // D_println(F("at pin " STR(IR_RECEIVE_PIN)));
 
   FastLED.addLeds<LED_TYPE, DATA_PIN, CLOCK_PIN, COLOR_ORDER, DATA_RATE_KHZ(250000)>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
@@ -513,27 +514,48 @@ void ircallback() {
 /* Print functions  */
 void printColorBrightness() {
   current_color = leds[ 1 ];
-  Serial.print("RGB:  ");
-  Serial.print(current_color.r);
-  Serial.print(", ");
-  Serial.print(current_color.g);
-  Serial.print(", ");
-  Serial.print(current_color.b);
-  Serial.print(" BRIGHTNESS:   ");
-  Serial.println(brightness);
+  D_print("RGB:  ");
+  D_print(current_color.r);
+  D_print(", ");
+  D_print(current_color.g);
+  D_print(", ");
+  D_print(current_color.b);
+  D_print(" BRIGHTNESS:   ");
+  D_println(brightness);
 }
 
 void printLoopType(long looptype) {
   switch (looptype) {
     case play_pause:
-      Serial.println("LOOP ALL");
+      D_println("LOOP ALL");
+      break;
+    case loop_rainbow:
+      D_println("LOOP RAINBOW");
+      break;
+    case loop_rainbowglitter:
+      D_println("LOOP RAINBOWGLITTER");
+      break;
+    case loop_confetti:
+      D_println("LOOP CONFETTI");
+      break;
+    case loop_sinelon:
+      D_println("LOOP SINELON");
+      break;
+    case loop_juggle:
+      D_println("LOOP JUGGLE");
+      break;
+    case loop_bpm:
+      D_println("LOOP BPM");
+      break;
+    case loop_fade:
+      D_println("LOOP FADE");
       break;
   }
 }
 
 void printCommand() {
-  Serial.print(F("Command 0x"));
-  Serial.print(IrReceiver.decodedIRData.command, HEX); // Print new command data
-  Serial.print(F(" RAW-DATA 0x"));
-  Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX); // Print "old" raw data
+  D_print(F("Command 0x"));
+  D_print(IrReceiver.decodedIRData.command, HEX); // Print new command data
+  D_print(F(" RAW-DATA 0x"));
+  D_println(IrReceiver.decodedIRData.decodedRawData, HEX); // Print "old" raw data
 }
